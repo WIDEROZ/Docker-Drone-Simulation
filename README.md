@@ -1,4 +1,13 @@
+# Automatic operations
+#### First step
+You need to build the DOCKERFILE : 
+Execute docker_build.sh
 
+#### Final step
+Run the docker container : 
+Execute docker_run.sh
+
+# Manual operations
 Build with DOCKERFILE : 
 ```bash
 sudo docker build \
@@ -11,50 +20,49 @@ sudo docker build \
 > [!WARNING]
 > Before running, make sure you allow X server and docker to communicate :
 > ```bash 
-> xhost +SI:localuser:$USER
+> XAUTH=/tmp/.docker.xauth
+> touch $XAUTH
+> chmod 600 $XAUTH
+> xauth nlist "$DISPLAY" | sed 's/^..../ffff/' | xauth -f $XAUTH nmerge -
 > ```
 
-> [!WARNING]
-> If the DISPLAY env variable does not exist, check your /tmp/.X11-unix folder and change the value of DISPLAY for :number (number corresponds to the value you will find in this folder, preceded by an X.) for example if there is a file named X0 : 
-> ```bash
-> export DISPLAY=:0
-> ```
-
-Therefore to run the container (for the first time) : 
+Therefore run the container (for the first time) : 
 ```bash
 sudo docker run -it \
---name ubuntu22-container \
---device /dev/dri \
---group-add video \
--e DISPLAY=$DISPLAY \
--v ${PWD}/container/:/home/drone \
--v /tmp/.X11-unix:/tmp/.X11-unix \
-ubuntu22 \
-bash
+  --name drone-container \
+  --device /dev/dri \
+  --group-add video \
+  -e DISPLAY=$DISPLAY \
+  -e XAUTHORITY=$XAUTH \
+  -v "$XAUTH:$XAUTH:ro" \
+  -v /tmp/.X11-unix:/tmp/.X11-unix \
+  -v "${PWD}"/share:/home/share \
+  ubuntu22 \
+  bash
 ```
 
 
 Start the container : 
 ```bash
-sudo docker start -ai ubuntu22-container
+sudo docker start -ai drone-container
 ```
 
 Stop the container : 
 ```bash
-sudo docker stop ubuntu22-container
+sudo docker stop drone-container
 ```
 
 
 Open another bash session : 
 ```bash
-docker exec -it ubuntu22-container bash
+sudo docker exec -it drone-container bash
 ```
 
 
 > [!WARNING]
-> Pour supprimer le conteneur (mais pas son build) : 
+> Delete the container (not the build) : 
 > ```bash
-> sudo docker rm ubuntu22-container
+> sudo docker rm drone-container
 > ```
 > (Files created after the build will not be saved)
 
